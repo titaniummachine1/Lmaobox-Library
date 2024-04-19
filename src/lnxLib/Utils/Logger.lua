@@ -13,14 +13,16 @@ local Logger = {
     Name = "",
     Level = 1
 }
-Logger.__index = Logger
-setmetatable(Logger, Logger)
+
+-- Correct metatable assignment using a separate metatable
+local Logger_mt = {__index = Logger}
+setmetatable(Logger, Logger_mt)
 
 -- Creates a new logger
 ---@param name string
 ---@return Logger
 function Logger.new(name)
-    local self = setmetatable({}, Logger)
+    local self = setmetatable({}, Logger_mt)
     self.Name = name
     self.Level = 1
 
