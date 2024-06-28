@@ -38,6 +38,9 @@ local KeyNames = {
     [KEY_RALT] = "RALT",
     [KEY_LCONTROL] = "LCONTROL",
     [KEY_RCONTROL] = "RCONTROL",
+    [KEY_LWIN] = "LWIN",
+    [KEY_RWIN] = "RWIN",
+    [KEY_APP] = "APP",
     [KEY_UP] = "UP",
     [KEY_LEFT] = "LEFT",
     [KEY_DOWN] = "DOWN",
@@ -70,16 +73,16 @@ local KeyValues = {
 
 -- Fill the tables
 local function D(x) return x, x end
-for i = 1, 10 do KeyNames[i], KeyValues[i] = D(tostring(i - 1)) end -- 0 - 9
-for i = 11, 36 do KeyNames[i], KeyValues[i] = D(string.char(i + 54)) end -- A - Z
-for i = 37, 46 do KeyNames[i], KeyValues[i] = "KP_" .. (i - 37), tostring(i - 37) end -- KP_0 - KP_9
-for i = 92, 103 do KeyNames[i] = "F" .. (i - 91) end
+for i = KEY_0, KEY_9 do KeyNames[i], KeyValues[i] = D(tostring(i - KEY_0)) end
+for i = KEY_A, KEY_Z do KeyNames[i], KeyValues[i] = D(string.char(i - KEY_A + 65)) end
+for i = KEY_PAD_0, KEY_PAD_9 do KeyNames[i], KeyValues[i] = "KP_" .. (i - KEY_PAD_0), tostring(i - KEY_PAD_0) end
+for i = KEY_F1, KEY_F12 do KeyNames[i] = "F" .. (i - KEY_F1 + 1) end
 
 -- Returns the name of a keycode
 ---@param key integer
----@return string?
+---@return string
 function Input.GetKeyName(key)
-    return KeyNames[key]
+    return KeyNames[key] or "UNKNOWN"
 end
 
 -- Returns the string value of a keycode
@@ -93,16 +96,22 @@ end
 ---@param char string
 ---@return integer?
 function Input.CharToKey(char)
-    return table.find(KeyValues, string.upper(char))
+    for k, v in pairs(KeyValues) do
+        if v == string.upper(char) then
+            return k
+        end
+    end
+    return nil
 end
 
 -- Returns the currently pressed key
 ---@return integer?
 function Input.GetPressedKey()
     for i = KEY_FIRST, KEY_LAST do
-        if input.IsButtonDown(i) then return i end
+        if input.IsButtonDown(i) then
+            return i
+        end
     end
-
     return nil
 end
 
@@ -111,10 +120,50 @@ end
 function Input.GetPressedKeys()
     local keys = {}
     for i = KEY_FIRST, KEY_LAST do
-        if input.IsButtonDown(i) then table.insert(keys, i) end
+        if input.IsButtonDown(i) then
+            table.insert(keys, i)
+        end
     end
-
     return keys
+end
+
+-- Returns a pressed key suitable for typing (alphanumeric and punctuation)
+---@return integer?
+function Input.GetTypingKey()
+    for i = KEY_0, KEY_Z do
+        if input.IsButtonDown(i) then
+            return i
+        end
+    end
+    for _, key in ipairs({
+        KEY_SPACE, KEY_ENTER, KEY_BACKSPACE, KEY_TAB, KEY_SEMICOLON, 
+        KEY_APOSTROPHE, KEY_COMMA, KEY_PERIOD, KEY_SLASH, KEY_BACKSLASH, 
+        KEY_MINUS, KEY_EQUAL
+    }) do
+        if input.IsButtonDown(key) then
+            return key
+        end
+    end
+    return nil
+end
+
+-- Returns a pressed key suitable for operations (function keys, arrows, etc.)
+---@return integer?
+function Input.GetOperationKey()
+    for i = KEY_F1, KEY_F12 do
+        if input.IsButtonDown(i) then
+            return i
+        end
+    end
+    for _, key in ipairs({
+        KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_HOME, KEY_END, 
+        KEY_PAGEUP, KEY_PAGEDOWN, KEY_INSERT, KEY_DELETE, KEY_ESCAPE
+    }) do
+        if input.IsButtonDown(key) then
+            return key
+        end
+    end
+    return nil
 end
 
 -- Returns if the cursor is in the given bounds
